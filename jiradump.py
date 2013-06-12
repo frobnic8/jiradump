@@ -68,7 +68,8 @@ def build_parser():
                         DEFAULT_MAX_RESULTS, default=DEFAULT_MAX_RESULTS)
     parser.add_argument('-f', '--fields', nargs='?', help='specify filename '
                         'of issue fields to dump, one per line. Default '
-                        'fields: ' + ', '.join(DEFAULT_OUTPUT_FIELDS))
+                        'fields: ' + ', '.join(DEFAULT_OUTPUT_FIELDS),
+                        metavar='FIELDS_FILE')
     # TODO: Add support for this.
 #   parser.add_argument('-s', '--split-datetimes', help='split known datetime '
 #                       'fields in two', action='store_true')
