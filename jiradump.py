@@ -17,25 +17,22 @@ API_SERVER = 'https://ticket.opower.com'
 
 DEFAULT_OUTPUT_FIELDS = (
     'Key',
+    'Project',
     'Issue Type',
-    'Story Points',
     'Summary',
-    'Resolution',
+    'Story Points',
+    'Assignee',
+    'Labels',
+    'Priority',
+    'Severity',
     'Status',
-    'Date Reported',
+    'Reporter',
     'Created',
+    'Resolution',
     'Resolved',
 )
 
 DEFAULT_MAX_RESULTS = 1000
-
-# Fields known to contain datetime values that we may want to split into
-# separate date and time columns in the output.
-DATETIME_FIELDS = (
-    'Created',
-    'Resolved',
-    'Date Reported',
-)
 
 # This dict is used to lookup the log level for a given number of -v options.
 _VERBOSE_TO_LOG_LEVEL = {
@@ -44,6 +41,27 @@ _VERBOSE_TO_LOG_LEVEL = {
     1: logging.INFO,
     2: logging.DEBUG
 }
+
+# Fields known to contain datetime values that we may want to split into
+# separate date and time columns in the output.
+DATETIME_FIELDS = (
+    'Created',
+    'Resolved',
+    'Date Reported',
+    'Due Date',
+    'End Date',
+    'Resolved',
+)
+
+
+def split_jira_datetime(raw_value, delimiter):
+    """Split a JIRA datetime string into separate date and time values.
+
+    e.g. 2013-06-04T15:15:36.000-0400
+
+    """
+    return delimiter.join([raw_value[0:10], raw_value[12:19]])
+
 
 def build_parser():
     """Build a command line argument parser for jiradump."""
@@ -61,6 +79,9 @@ def build_parser():
     parser.add_argument('-d', '--delimiter', nargs='?', help='specify output '
                         "column delimiter. Defaults to tab, i.e. '\\t'",
                         default='\t')
+    parser.add_argument('-D', '--subdelimiter', nargs='?', help='specify '
+                        'delimiter for fields with multiple values. Defaults '
+                        "to comma space, i.e. ', '", default=', ')
     parser.add_argument('-o', '--output', nargs='?', help='specify output '
                         'filename. Defaults to standard out')
     parser.add_argument('-m', '--max-results', nargs='?', help='specify '
@@ -70,9 +91,10 @@ def build_parser():
                         'of issue fields to dump, one per line. Default '
                         'fields: ' + ', '.join(DEFAULT_OUTPUT_FIELDS),
                         metavar='FIELDS_FILE')
-    # TODO: Add support for this.
-#   parser.add_argument('-s', '--split-datetimes', help='split known datetime '
-#                       'fields in two', action='store_true')
+    # TODO: Support this.
+    #parser.add_argument('-c', '--command-log', help='append command line '
+    #                    'used to output for logging and ease of replay',
+    #                    action='store_true')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list-fields', help='list all field IDs and names '
@@ -189,7 +211,7 @@ if __name__ == '__main__':
             for field in fields_file:
                 field = field.strip()
                 if field:
-                    outpur_fields.append(field)
+                    output_fields.append(field)
     else:
         output_fields = DEFAULT_OUTPUT_FIELDS
     debug('Output fields: ' + ', '.join(output_fields))
@@ -200,7 +222,16 @@ if __name__ == '__main__':
     # Create a header row for the output.
     # Leave off the newline so we can make sure we don't add a final blank
     # line when sending output to a file.
-    output.write(args.delimiter.join(output_fields))
+    headers = []
+    # Walk the list to check for any headers we need to process.
+    # TODO: There has GOT to be a less ugly way to do this.
+    for field in output_fields:
+        # Split any datetime headers in two.
+        if field in DATETIME_FIELDS:
+            headers.append('Date %s%sTime %s' % (field, args.delimiter, field))
+        else:
+            headers.append(field)
+    output.write(args.delimiter.join(headers))
 
     # Write out the summary for each issue.
     for issue in issues:
@@ -209,15 +240,33 @@ if __name__ == '__main__':
         issue.fields.issuekey = issue.key
 
         # Look up the values for each field.
-        values = [str(getattr(issue.fields, field_ids[field], ''))
-                  for field in output_fields]
+        values = []
+        for field in output_fields:
+            value = getattr(issue.fields, field_ids[field], '')
 
-        # And convert any Unicode to UTF-8.
-        values = [value.encode('utf-8') for value in values]
+            # If this field holds multiple values, convert them into a single
+            # string.
+            if not isinstance(value, basestring):
+                try:
+                    value = args.subdelimiter.join([str(val) for val in value])
+                except TypeError:
+                    pass
+
+            # Split any datetime values in two.
+            if field in DATETIME_FIELDS:
+                if value:
+                    value = split_jira_datetime(value, args.delimiter)
+                else:
+                    value = args.delimiter
+
+            # And convert any Unicode to UTF-8.
+            values.append(str(value).encode('utf-8'))
 
         # We add the newline before each new row so we don't end with a
         # final blank line when sending output to a file.
         output.write('\n' + args.delimiter.join(values))
+
+    # TODO: Opitionally add the command line used to produce the outoput.
 
     # If we are writing to standard output, add a final newline to be nice.
     if output == sys.stdout:
