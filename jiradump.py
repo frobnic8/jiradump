@@ -53,6 +53,26 @@ DATETIME_FIELDS = (
     'Resolved',
 )
 
+# TODO: Support that crazy ass 'Time in Status'
+#
+# Example data:
+# u'1_*:*_1_*:*_584742000_*|*_6_*:*_1_*:*_0_*|*_10111_*:*_1_*:*_170163000' + \
+# u'_*|*_10112_*:*_1_*:*_352367000'
+#
+# How to split:
+#   [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
+#
+# The first part is the status code, the second is the number of times in that
+# status, the third is the time in milliseconds.
+#
+# Ideal output would have multiple columns (two for each status that occurs,
+# but only the ones that do occur in the output). One would be times in status
+# and the other time in the same status.
+#
+# Time is probably best in decimal days.
+#
+# Probably want to filter out time in resolved and closed statuses.
+
 
 def split_jira_datetime(raw_value, delimiter):
     """Split a JIRA datetime string into separate date and time values.
