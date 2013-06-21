@@ -268,7 +268,7 @@ if __name__ == '__main__':
             # string.
             if not isinstance(value, basestring):
                 try:
-                    value = args.subdelimiter.join([str(val) for val in value])
+                    value = args.subdelimiter.join([unicode(val) for val in value])
                 except TypeError:
                     pass
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                     value = args.delimiter
 
             # And convert any Unicode to UTF-8.
-            values.append(str(value).encode('utf-8'))
+            values.append(unicode(value).encode('utf-8'))
 
         # We add the newline before each new row so we don't end with a
         # final blank line when sending output to a file.
