@@ -6,8 +6,10 @@ __author__ = 'erskin.cherry@opower.com'
 __version__ = '1.0.0'
 
 from getpass import getpass, getuser
+from collections import Iterable
 from jira.client import JIRA
 from logging import debug, info, warning, error, getLogger
+from datetime import datetime
 import argparse
 import logging
 import sys
@@ -42,16 +44,18 @@ _VERBOSE_TO_LOG_LEVEL = {
     2: logging.DEBUG
 }
 
-# Fields known to contain datetime values that we may want to split into
-# separate date and time columns in the output.
-DATETIME_FIELDS = (
-    'Created',
-    'Resolved',
-    'Date Reported',
-    'Due Date',
-    'End Date',
-    'Resolved',
-)
+
+def parse_datetime_value(raw_value):
+    """Parse the ISO stye datetime values into a more Excel parsable format
+
+    e.g. 2013-06-04T15:15:36.000-0400 to 2013-06-04 15:15:36
+    """
+    if raw_value:
+        try:
+            return str(datetime.strptime(raw_value[:19], '%Y-%m-%dT%H:%M:%S'))
+        except ValueError:
+            warning('Could not parse datetime: ' + raw_value)
+            return raw_value
 
 # TODO: Support that crazy ass 'Time in Status'
 #
@@ -73,14 +77,25 @@ DATETIME_FIELDS = (
 #
 # Probably want to filter out time in resolved and closed statuses.
 
+# Fields known to contain datetime values that we may want to split into
+# separate date and time columns in the output.
+FIELD_PARSERS = {
+    'Created': parse_datetime_value,
+    'Resolved': parse_datetime_value,
+    'Date Reported': parse_datetime_value,
+    'Due Date': parse_datetime_value,
+    'End Date': parse_datetime_value,
+    'Resolved': parse_datetime_value,
+}
 
-def split_jira_datetime(raw_value, delimiter):
-    """Split a JIRA datetime string into separate date and time values.
+FIELD_SPLITTERS = {
+}
 
-    e.g. 2013-06-04T15:15:36.000-0400
+HEADER_PARSERS = {
+}
 
-    """
-    return delimiter.join([raw_value[0:10], raw_value[12:19]])
+HEADER_SPLITTERS = {
+}
 
 
 def build_parser():
@@ -111,10 +126,6 @@ def build_parser():
                         'of issue fields to dump, one per line. Default '
                         'fields: ' + ', '.join(DEFAULT_OUTPUT_FIELDS),
                         metavar='FIELDS_FILE')
-    # TODO: Support this.
-    #parser.add_argument('-c', '--command-log', help='append command line '
-    #                    'used to output for logging and ease of replay',
-    #                    action='store_true')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list-fields', help='list all field IDs and names '
@@ -122,6 +133,8 @@ def build_parser():
     group.add_argument('--list-filters', help='list IDs and names of favorite '
                        'filters, i.e. those findable by name, and exit',
                        action='store_true')
+    group.add_argument('--list-statuses', help='list all status IDs and names '
+                        'known and exit', action='store_true')
     group.add_argument('filter', metavar='FILTER', nargs='?', help='specifies the '
                         'filter name or ID to dump. Only favorite filters can '
                         'be referenced by name')
@@ -130,8 +143,26 @@ def build_parser():
     return parser
 
 
+def list_items(items, delimiter, output, flip=False):
+    """Write the item's keys and values to the output."""
+    # Convert any Unicode values to UTF-8.
+    utf8 = []
+    for key, value in items.iteritems():
+        if flip:
+            key, value = value, key
+        utf8.append(delimiter.join([key, value]).encode('utf-8'))
+    output.write('\n'.join(utf8))
+
+    # If we are writing to standard output, add a final newline to be nice.
+    if output == sys.stdout:
+        output.write('\n')
+    sys.exit()
+
+
 if __name__ == '__main__':
-    # Pase the command line arguments.
+    ##########################################################################
+    # Parse the command line arguments.
+    ##########################################################################
     args = build_parser().parse_args()
 
     # Set the logging level based on the verbose option.
@@ -159,6 +190,10 @@ if __name__ == '__main__':
     # Parse any encoded characters in the delmiter.
     args.delimiter = args.delimiter.decode('string-escape')
 
+    ##########################################################################
+    # Setup JIRA and file connections.
+    ##########################################################################
+
     # Configure our JIRA interface.
     options = {'server': API_SERVER}
     jira = JIRA(options=options, basic_auth=(args.username, PASSWORD))
@@ -166,13 +201,18 @@ if __name__ == '__main__':
 
     # Create a mapping of field names (including custom ones) to field IDs.
     debug('Mapping field names to IDs.')
-    # TODO: Added error handling
+    # TODO: Add error handling
     field_ids = dict([(field['name'], field['id']) for field in jira.fields()])
 
     # Create a mapping of filters names (including custom ones) to filter IDs.
     debug('Mapping favorite filter names to IDs.')
-    # TODO: Added error handling
+    # TODO: Add error handling
     filter_ids = dict([(fav.name, fav.id) for fav in jira.favourite_filters()])
+
+    # Create a mapping of status IDs to names (including custom statuses).
+    # TODO: Add error handling
+    status_names = dict([(status.id, status.name)
+                         for status in jira.statuses()])
 
     # Open the output file.
     if args.output:
@@ -182,31 +222,32 @@ if __name__ == '__main__':
         debug('Writing output to standard output.')
         output = sys.stdout
 
+    # TODO: Optionally add the command line used to produce the output.
+
+    ##########################################################################
+    # If we are just listing the available statuses, do so now and exit.
+    ##########################################################################
+    if args.list_statuses:
+        list_items(status_names, args.delimiter, output)
+        sys.exit()
+
+    ##########################################################################
     # If we are just listing the available fields, do so now and exit.
+    ##########################################################################
     if args.list_fields:
-        # Convert any Unicode values to UTF-8.
-        utf8 = []
-        for key, value in field_ids.iteritems():
-            utf8.append(args.delimiter.join([value, key]).encode('utf-8'))
-        output.write('\n'.join(utf8))
-
-        # If we are writing to standard output, add a final newline to be nice.
-        if output == sys.stdout:
-            output.write('\n')
+        list_items(field_ids, args.delimiter, output, flip=True)
         sys.exit()
 
+    ##########################################################################
     # If we are just listing the favorite filters, do so now and exit.
+    ##########################################################################
     if args.list_filters:
-        # Convert any Unicode values to UTF-8.
-        utf8 = []
-        for key, value in filter_ids.iteritems():
-            utf8.append(args.delimiter.join([value, key]).encode('utf-8'))
-        output.write('\n'.join(utf8))
-
-        # If we are writing to standard output, add a final newline to be nice.
-        if output == sys.stdout:
-            output.write('\n')
+        list_items(filter_ids, args.delimiter, output, flip=True)
         sys.exit()
+
+    ##########################################################################
+    # Parse the filter issues and output.
+    ##########################################################################
 
     # Grab the main filter.
     debug('Looking up the issue filter in JIRA.')
@@ -226,31 +267,36 @@ if __name__ == '__main__':
 
     # Create the list of fields we will dump.
     if args.fields:
-        output_fields = []
+        input_fields = []
         with open(args.fields) as fields_file:
             for field in fields_file:
                 field = field.strip()
                 if field:
-                    output_fields.append(field)
+                    input_fields.append(field)
     else:
-        output_fields = DEFAULT_OUTPUT_FIELDS
-    debug('Output fields: ' + ', '.join(output_fields))
-
-    # TODO: Handle splitting datetime fields.
-    #if args.split_datetime:
+        input_fields = DEFAULT_OUTPUT_FIELDS
+    debug('Input fields from filter: ' + ', '.join(input_fields))
 
     # Create a header row for the output.
-    # Leave off the newline so we can make sure we don't add a final blank
-    # line when sending output to a file.
+    # First handle any header splitting.
+    output_fields = []
+    for field in input_fields:
+        if field in HEADER_SPLITTERS:
+            output_fields += HEADER_SPLITTERS[field](field)
+        else:
+            output_fields.append(field)
+    debug('Output columns: ' + ', '.join(output_fields))
+
+    # Then parse any headers than need conversion.
     headers = []
-    # Walk the list to check for any headers we need to process.
-    # TODO: There has GOT to be a less ugly way to do this.
     for field in output_fields:
-        # Split any datetime headers in two.
-        if field in DATETIME_FIELDS:
-            headers.append('Date %s%sTime %s' % (field, args.delimiter, field))
+        if field in HEADER_PARSERS:
+            headers.append(HEADER_PARSER[field](field))
         else:
             headers.append(field)
+
+    # Leave off the newline so we can make sure we don't add a final blank
+    # line when sending output to a file.
     output.write(args.delimiter.join(headers))
 
     # Write out the summary for each issue.
@@ -259,34 +305,44 @@ if __name__ == '__main__':
         # level as all the other fields.
         issue.fields.issuekey = issue.key
 
-        # Look up the values for each field.
-        values = []
+        # Look up the individual values for each field for the issue.
+        issue_values = []
+
+        # First split any values as needed.
+        split_fields = {}
+        for field in input_fields:
+            field_value = getattr(issue.fields, field_ids[field], '')
+            if field in FIELD_SPLITTERS:
+                split_fields.update(FIELD_SPLITTERS[field](field_value))
+            else:
+                split_fields[field] = field_value
+
+        # Then parse each value.
         for field in output_fields:
-            value = getattr(issue.fields, field_ids[field], '')
+            field_values = split_fields[field]
 
-            # If this field holds multiple values, convert them into a single
-            # string.
-            if not isinstance(value, basestring):
-                try:
-                    value = args.subdelimiter.join([unicode(val) for val in value])
-                except TypeError:
-                    pass
+            # Ensure that  make it an iterable so we can
+            # treat it the same as multiple value fields.
+            if (isinstance(field_values, basestring) or
+                not isinstance(field_values, Iterable)):
+                field_values = [field_values]
 
-            # Split any datetime values in two.
-            if field in DATETIME_FIELDS:
-                if value:
-                    value = split_jira_datetime(value, args.delimiter)
-                else:
-                    value = args.delimiter
+            # Apply any parsing for individual values.
+            if field in FIELD_PARSERS:
+                field_values = [FIELD_PARSERS[field](value)
+                                for value in field_values]
+            else:
+                field_values = [unicode(value) for value in field_values]
+
+            # Conver the list of values into a single string.
+            field_values = args.subdelimiter.join(field_values)
 
             # And convert any Unicode to UTF-8.
-            values.append(unicode(value).encode('utf-8'))
+            issue_values.append(unicode(field_values).encode('utf-8'))
 
         # We add the newline before each new row so we don't end with a
         # final blank line when sending output to a file.
-        output.write('\n' + args.delimiter.join(values))
-
-    # TODO: Opitionally add the command line used to produce the outoput.
+        output.write('\n' + args.delimiter.join(issue_values))
 
     # If we are writing to standard output, add a final newline to be nice.
     if output == sys.stdout:
