@@ -9,7 +9,7 @@ from getpass import getpass, getuser
 from collections import Iterable
 from jira.client import JIRA
 from logging import debug, info, warning, error, getLogger
-from datetime import datetime
+from datetime import datetime, timedelta
 import argparse
 import logging
 import sys
@@ -50,6 +50,7 @@ def parse_datetime_value(raw_value):
 
     e.g. 2013-06-04T15:15:36.000-0400 to 2013-06-04 15:15:36
     """
+    debug('Parsing raw datetime value: ' + repr(raw_value))
     if raw_value:
         try:
             return str(datetime.strptime(raw_value[:19], '%Y-%m-%dT%H:%M:%S'))
@@ -57,25 +58,61 @@ def parse_datetime_value(raw_value):
             warning('Could not parse datetime: ' + raw_value)
             return raw_value
 
+#
 # TODO: Support that crazy ass 'Time in Status'
-#
-# Example data:
-# u'1_*:*_1_*:*_584742000_*|*_6_*:*_1_*:*_0_*|*_10111_*:*_1_*:*_170163000' + \
-# u'_*|*_10112_*:*_1_*:*_352367000'
-#
-# How to split:
-#   [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
-#
-# The first part is the status code, the second is the number of times in that
-# status, the third is the time in milliseconds.
-#
-# Ideal output would have multiple columns (two for each status that occurs,
-# but only the ones that do occur in the output). One would be times in status
-# and the other time in the same status.
-#
-# Time is probably best in decimal days.
-#
-# Probably want to filter out time in resolved and closed statuses.
+# TODO: Replace this with a proper, multi-column parsing object.
+def parse_time_in_status(raw_value):
+    """Split the time in status raw into a readable string.
+
+    Example data:
+    u'1_*:*_1_*:*_584742000_*|*_6_*:*_1_*:*_0_*|*_10111_*:*_1_*:*_170163000' \
+    + u'_*|*_10112_*:*_1_*:*_352367000'
+
+    How to split:
+      [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
+
+    The first part is the status code, the second is the number of times in that
+    status, the third is the time in milliseconds.
+
+    Ideal output would have multiple columns (two for each status that occurs,
+    but only the ones that do occur in the output). One would be times in status
+    and the other time in the same status.
+
+    Time is probably best in decimal days.
+
+    Probably want to filter out time in resolved and closed statuses.
+
+    """
+    if not raw_value:
+        return ''
+
+    # TODO: This nastiness is to support a temporary Time in Status parsing
+    # until we get a real parser setup.
+    global status_names
+
+    # These are the crazy Time in Status delimiters we need to parse with.
+    PARSING_DELIMITER = '_*|*_'
+    PARSING_SUBDELIMITER = '_*:*_'
+
+    # TODO: This is bad because we IGNORE the user set subdelimiter.
+    SUBDELIMITER = ', '
+    # TODO: This is also bad and could conflict with user set delimiters.
+    SUBSUBDELIMITER = ':'
+
+    parsed = []
+    debug('Splitting Raw Time in Status: ' + repr(raw_value))
+    for item in raw_value.split(PARSING_DELIMITER):
+        debug('Splitting Time in Status item: ' + repr(item))
+        split = item.split(PARSING_SUBDELIMITER)
+        debug('Split Time in Status item: ' + repr(split))
+        split[0] = status_names.get(split[0], 'Unknown ' + split[0])
+        # TODO: Add error handling here.
+        split[2] = timedelta(milliseconds=int(split[2])).total_seconds()
+        split[2] = '%0.2f days' % (split[2] / (60 * 60 * 24))
+        debug('Parsed Time in Status item: ' + repr(split))
+        parsed.append(SUBSUBDELIMITER.join(split))
+    return SUBDELIMITER.join(parsed)
+
 
 # Fields known to contain datetime values that we may want to split into
 # separate date and time columns in the output.
@@ -86,8 +123,10 @@ FIELD_PARSERS = {
     'Due Date': parse_datetime_value,
     'End Date': parse_datetime_value,
     'Resolved': parse_datetime_value,
+    'Time in Status': parse_time_in_status,
 }
 
+# Fields that should be split into multiple columns
 FIELD_SPLITTERS = {
 }
 
@@ -211,6 +250,9 @@ if __name__ == '__main__':
 
     # Create a mapping of status IDs to names (including custom statuses).
     # TODO: Add error handling
+    # TODO: This nastiness is to support a temporary Time in Status parsing
+    # until we get a real parser setup.
+    global status_names
     status_names = dict([(status.id, status.name)
                          for status in jira.statuses()])
 
