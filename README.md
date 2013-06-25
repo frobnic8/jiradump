@@ -122,8 +122,3 @@ Known Bugs
 Rendering the 'Time in Status' field is current a dirty, dirty hack that ignores
 any settings for subdelimiter and has a fixed sub-subdelimiter of ':'. I need to
 replace it with a proper parsing object infrastructure at some point.
-
-OpenOffice still has a hard time parsing the date time fields even though the
-output is ISO standard. Since the two-column method previously in use still
-needed spreadsheet formula hackery to associate the time and date back together
-anyway, I figured on column was a better choice.
