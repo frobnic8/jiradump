@@ -321,23 +321,26 @@ if __name__ == '__main__':
         for field in output_fields:
             field_values = split_fields[field]
 
-            # Ensure that  make it an iterable so we can
-            # treat it the same as multiple value fields.
-            if (isinstance(field_values, basestring) or
-                not isinstance(field_values, Iterable)):
-                field_values = [field_values]
-
-            # Apply any parsing for individual values.
-            if field in FIELD_PARSERS:
-                field_values = [FIELD_PARSERS[field](value)
-                                for value in field_values]
+            if field_values is None:
+                field_values = u''
             else:
-                field_values = [unicode(value) for value in field_values]
+                # Ensure that  make it an iterable so we can
+                # treat it the same as multiple value fields.
+                if (isinstance(field_values, basestring) or
+                    not isinstance(field_values, Iterable)):
+                    field_values = [field_values]
 
-            # Conver the list of values into a single string.
-            field_values = args.subdelimiter.join(field_values)
+                # Apply any parsing for individual values.
+                if field in FIELD_PARSERS:
+                    field_values = [FIELD_PARSERS[field](value)
+                                    for value in field_values]
+                else:
+                    field_values = [unicode(value) for value in field_values]
 
-            # And convert any Unicode to UTF-8.
+                # Convert the list of values into a single string.
+                field_values = args.subdelimiter.join(field_values)
+
+            # Convert any Unicode to UTF-8.
             issue_values.append(unicode(field_values).encode('utf-8'))
 
         # We add the newline before each new row so we don't end with a
