@@ -11,6 +11,7 @@ from jira.client import JIRA
 from logging import debug, info, warning, error, getLogger
 from datetime import datetime, timedelta
 import argparse
+import jira.resources
 import logging
 import sys
 
@@ -45,6 +46,45 @@ _VERBOSE_TO_LOG_LEVEL = {
 }
 
 
+# Monkey patch jira to have basic __str__ and __repr__ methods for Resource
+if jira.resources.Resource.__str__ == object.__str__:
+    # A prioritized list of the keys in self.raw most likely to contain a human
+    # readable name or identifier, or that offer other key information.
+    jira.resources.Resource._READABLE_IDS = ('displayName', 'key', 'name',
+                                             'filename', 'value', 'scope', 'votes',
+                                             'id', 'mimeType', 'closed')
+
+
+    def __resource_str(self):
+        """Provide a short, pretty name for this jira resource."""
+        # Return the first value we find that is likely to be human readable.
+        for name in self._READABLE_IDS:
+            if name in self.raw:
+                pretty_name = unicode(self.raw[name])
+                # Include any child to support nested select fields.
+                if hasattr(self, 'child'):
+                    pretty_name += ' - ' + unicode(self.child)
+                return pretty_name
+
+        # If all else fails, use repr to make sure we get something.
+        return repr(self)
+
+    jira.resources.Resource.__str__ = __resource_str
+
+
+    def __resource_repr(self):
+        """Provide a more detailed name for this jira resource."""
+        # Identify the class and include any and all relevant values.
+        names = []
+        for name in self._READABLE_IDS:
+            if name in self.raw:
+                names.append(name + '=' + repr(self.raw[name]))
+        return '<JIRA %s: %s>' % (self.__class__.__name__, ', '.join(names))
+
+    jira.resources.Resource.__repr__ = __resource_repr
+
+
+# Parsing methods for various fields.
 def parse_datetime_value(raw_value):
     """Parse the ISO stye datetime values into a more Excel parsable format
 
@@ -58,7 +98,7 @@ def parse_datetime_value(raw_value):
             warning('Could not parse datetime: ' + raw_value)
             return raw_value
 
-#
+
 # TODO: Support that crazy ass 'Time in Status'
 # TODO: Replace this with a proper, multi-column parsing object.
 def parse_time_in_status(raw_value):
@@ -71,12 +111,12 @@ def parse_time_in_status(raw_value):
     How to split:
       [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
 
-    The first part is the status code, the second is the number of times in that
-    status, the third is the time in milliseconds.
+    The first part is the status code, the second is the number of times in
+    that status, the third is the time in milliseconds.
 
     Ideal output would have multiple columns (two for each status that occurs,
-    but only the ones that do occur in the output). One would be times in status
-    and the other time in the same status.
+    but only the ones that do occur in the output). One would be times in
+    status and the other time in the same status.
 
     Time is probably best in decimal days.
 
@@ -122,7 +162,6 @@ FIELD_PARSERS = {
     'Date Reported': parse_datetime_value,
     'Due Date': parse_datetime_value,
     'End Date': parse_datetime_value,
-    'Resolved': parse_datetime_value,
     'Time in Status': parse_time_in_status,
 }
 
@@ -168,15 +207,15 @@ def build_parser():
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list-fields', help='list all field IDs and names '
-                        'known and exit', action='store_true')
+                       'known and exit', action='store_true')
     group.add_argument('--list-filters', help='list IDs and names of favorite '
                        'filters, i.e. those findable by name, and exit',
                        action='store_true')
     group.add_argument('--list-statuses', help='list all status IDs and names '
-                        'known and exit', action='store_true')
-    group.add_argument('filter', metavar='FILTER', nargs='?', help='specifies the '
-                        'filter name or ID to dump. Only favorite filters can '
-                        'be referenced by name')
+                       'known and exit', action='store_true')
+    group.add_argument('filter', metavar='FILTER', nargs='?',
+                       help='specifies the filter name or ID to dump. Only '
+                       'favorite filters can be referenced by name')
     parser.add_argument('--version', action='version',
                         version='%(prog)s ' + __version__)
     return parser
@@ -199,16 +238,13 @@ def list_items(items, delimiter, output, flip=False):
 
 
 if __name__ == '__main__':
-    ##########################################################################
     # Parse the command line arguments.
-    ##########################################################################
     args = build_parser().parse_args()
 
     # Set the logging level based on the verbose option.
     getLogger().setLevel(level=_VERBOSE_TO_LOG_LEVEL.get(args.verbose,
                                                          logging.DEBUG))
     debug('Verbosity level: %s' % args.verbose)
-
 
     debug('Building credentials.')
     # Guess the username if possible.
@@ -229,9 +265,7 @@ if __name__ == '__main__':
     # Parse any encoded characters in the delmiter.
     args.delimiter = args.delimiter.decode('string-escape')
 
-    ##########################################################################
     # Setup JIRA and file connections.
-    ##########################################################################
 
     # Configure our JIRA interface.
     options = {'server': API_SERVER}
@@ -266,30 +300,22 @@ if __name__ == '__main__':
 
     # TODO: Optionally add the command line used to produce the output.
 
-    ##########################################################################
     # If we are just listing the available statuses, do so now and exit.
-    ##########################################################################
     if args.list_statuses:
         list_items(status_names, args.delimiter, output)
         sys.exit()
 
-    ##########################################################################
     # If we are just listing the available fields, do so now and exit.
-    ##########################################################################
     if args.list_fields:
         list_items(field_ids, args.delimiter, output, flip=True)
         sys.exit()
 
-    ##########################################################################
     # If we are just listing the favorite filters, do so now and exit.
-    ##########################################################################
     if args.list_filters:
         list_items(filter_ids, args.delimiter, output, flip=True)
         sys.exit()
 
-    ##########################################################################
     # Parse the filter issues and output.
-    ##########################################################################
 
     # Grab the main filter.
     debug('Looking up the issue filter in JIRA.')
@@ -333,7 +359,7 @@ if __name__ == '__main__':
     headers = []
     for field in output_fields:
         if field in HEADER_PARSERS:
-            headers.append(HEADER_PARSER[field](field))
+            headers.append(HEADER_PARSERS[field](field))
         else:
             headers.append(field)
 
@@ -369,7 +395,7 @@ if __name__ == '__main__':
                 # Ensure that  make it an iterable so we can
                 # treat it the same as multiple value fields.
                 if (isinstance(field_values, basestring) or
-                    not isinstance(field_values, Iterable)):
+                        not isinstance(field_values, Iterable)):
                     field_values = [field_values]
 
                 # Apply any parsing for individual values.
