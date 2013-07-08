@@ -6,17 +6,18 @@ __author__ = 'erskin.cherry@opower.com'
 __version__ = '1.0.0'
 
 from getpass import getpass, getuser
-from collections import Iterable
 from jira.client import JIRA
 from logging import debug, info, warning, error, getLogger
-from datetime import datetime, timedelta
+from parsers import BasicFieldParser, DateTimeFieldParser, \
+                    TimeInStatusFieldParser
 import argparse
 import jira.resources
 import logging
 import sys
+
 # This import can be removed if/when the following pull request for jira-python
 # is approved and merged:
-# https://bitbucket.org/bspeakmon/jira-python/pull-request/25/added-__str__-and-__repr__-support-to-the/diff
+# https://bitbucket.org/bspeakmon/jira-python/pull-request/25
 import monkeypatchjira
 
 # JIRA API configuration parameters.
@@ -49,103 +50,25 @@ _VERBOSE_TO_LOG_LEVEL = {
     2: logging.DEBUG
 }
 
-
-# Parsing methods for various fields.
-def parse_datetime_value(raw_value):
-    """Parse the ISO stye datetime values into a more Excel parsable format
-
-    e.g. 2013-06-04T15:15:36.000-0400 to 2013-06-04 15:15:36
-    """
-    debug('Parsing raw datetime value: ' + repr(raw_value))
-    if raw_value:
-        try:
-            return str(datetime.strptime(raw_value[:19], '%Y-%m-%dT%H:%M:%S'))
-        except ValueError:
-            warning('Could not parse datetime: ' + raw_value)
-            return raw_value
-
-
-# TODO: Support that crazy ass 'Time in Status'
-# TODO: Replace this with a proper, multi-column parsing object.
-def parse_time_in_status(raw_value):
-    """Split the time in status raw into a readable string.
-
-    Example data:
-    u'1_*:*_1_*:*_584742000_*|*_6_*:*_1_*:*_0_*|*_10111_*:*_1_*:*_170163000' \
-    + u'_*|*_10112_*:*_1_*:*_352367000'
-
-    How to split:
-      [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
-
-    The first part is the status code, the second is the number of times in
-    that status, the third is the time in milliseconds.
-
-    Ideal output would have multiple columns (two for each status that occurs,
-    but only the ones that do occur in the output). One would be times in
-    status and the other time in the same status.
-
-    Time is probably best in decimal days.
-
-    Probably want to filter out time in resolved and closed statuses.
-
-    """
-    if not raw_value:
-        return ''
-
-    # TODO: This nastiness is to support a temporary Time in Status parsing
-    # until we get a real parser setup.
-    global status_names
-
-    # These are the crazy Time in Status delimiters we need to parse with.
-    PARSING_DELIMITER = '_*|*_'
-    PARSING_SUBDELIMITER = '_*:*_'
-
-    # TODO: This is bad because we IGNORE the user set subdelimiter.
-    SUBDELIMITER = ', '
-    # TODO: This is also bad and could conflict with user set delimiters.
-    SUBSUBDELIMITER = ':'
-
-    parsed = []
-    debug('Splitting Raw Time in Status: ' + repr(raw_value))
-    for item in raw_value.split(PARSING_DELIMITER):
-        debug('Splitting Time in Status item: ' + repr(item))
-        split = item.split(PARSING_SUBDELIMITER)
-        debug('Split Time in Status item: ' + repr(split))
-        split[0] = status_names.get(split[0], 'Unknown ' + split[0])
-        # TODO: Add error handling here.
-        split[2] = timedelta(milliseconds=int(split[2])).total_seconds()
-        split[2] = '%0.2f days' % (split[2] / (60 * 60 * 24))
-        debug('Parsed Time in Status item: ' + repr(split))
-        parsed.append(SUBSUBDELIMITER.join(split))
-    return SUBDELIMITER.join(parsed)
-
-
 # Fields known to contain datetime values that we may want to split into
 # separate date and time columns in the output.
 FIELD_PARSERS = {
-    'Created': parse_datetime_value,
-    'Resolved': parse_datetime_value,
-    'Date Reported': parse_datetime_value,
-    'Due Date': parse_datetime_value,
-    'End Date': parse_datetime_value,
-    'Time in Status': parse_time_in_status,
-}
-
-# Fields that should be split into multiple columns
-FIELD_SPLITTERS = {
-}
-
-HEADER_PARSERS = {
-}
-
-HEADER_SPLITTERS = {
+    'Created': DateTimeFieldParser,
+    'Resolved': DateTimeFieldParser,
+    'Date Reported': DateTimeFieldParser,
+    'Due Date': DateTimeFieldParser,
+    'End Date': DateTimeFieldParser,
+    #'Time in Status': TimeInStatusFieldParser,
 }
 
 
 def build_parser():
     """Build a command line argument parser for jiradump."""
     parser = argparse.ArgumentParser(description='dump JIRA issues from a '
-                                     'filter as delimited plain text')
+                                     'filter at %s as delimited plain text' %
+                                     API_SERVER)
+
+    # TODO: Display default fields in help.
 
     parser.add_argument('-u', '--username', nargs='?', help='specify JIRA '
                         'user account. Defaults to the local username')
@@ -248,14 +171,6 @@ if __name__ == '__main__':
     # TODO: Add error handling
     filter_ids = dict([(fav.name, fav.id) for fav in jira.favourite_filters()])
 
-    # Create a mapping of status IDs to names (including custom statuses).
-    # TODO: Add error handling
-    # TODO: This nastiness is to support a temporary Time in Status parsing
-    # until we get a real parser setup.
-    global status_names
-    status_names = dict([(status.id, status.name)
-                         for status in jira.statuses()])
-
     # Open the output file.
     if args.output:
         info('Writing output to %s', args.output)
@@ -268,6 +183,12 @@ if __name__ == '__main__':
 
     # If we are just listing the available statuses, do so now and exit.
     if args.list_statuses:
+        # Create a mapping of status IDs to names (including custom statuses).
+        debug('Mapping status IDs to names.')
+        # TODO: Add error handling
+        status_names = dict([(status.id, status.name)
+                             for status in jira.statuses()])
+
         list_items(status_names, args.delimiter, output)
         sys.exit()
 
@@ -311,27 +232,22 @@ if __name__ == '__main__':
         input_fields = DEFAULT_OUTPUT_FIELDS
     debug('Input fields from filter: ' + ', '.join(input_fields))
 
+    field_parsers = {}
+
+    for field in input_fields:
+        Parser = FIELD_PARSERS.get(field, BasicFieldParser)
+        field_parsers[field] = Parser(field, issues, jira, args.subdelimiter)
+
     # Create a header row for the output.
     # First handle any header splitting.
     output_fields = []
     for field in input_fields:
-        if field in HEADER_SPLITTERS:
-            output_fields += HEADER_SPLITTERS[field](field)
-        else:
-            output_fields.append(field)
+        output_fields += field_parsers[field].headers()
     debug('Output columns: ' + ', '.join(output_fields))
-
-    # Then parse any headers than need conversion.
-    headers = []
-    for field in output_fields:
-        if field in HEADER_PARSERS:
-            headers.append(HEADER_PARSERS[field](field))
-        else:
-            headers.append(field)
 
     # Leave off the newline so we can make sure we don't add a final blank
     # line when sending output to a file.
-    output.write(args.delimiter.join(headers))
+    output.write(args.delimiter.join(output_fields))
 
     # Write out the summary for each issue.
     for issue in issues:
@@ -339,43 +255,17 @@ if __name__ == '__main__':
         # level as all the other fields.
         issue.fields.issuekey = issue.key
 
-        # Look up the individual values for each field for the issue.
+        # Look up and parse the individual values for each field in this issue.
         issue_values = []
 
-        # First split any values as needed.
-        split_fields = {}
         for field in input_fields:
-            field_value = getattr(issue.fields, field_ids[field], '')
-            if field in FIELD_SPLITTERS:
-                split_fields.update(FIELD_SPLITTERS[field](field_value))
-            else:
-                split_fields[field] = field_value
+            # Grab the values.
+            field_values = getattr(issue.fields, field_ids[field], u'')
+            # Parse the values.
+            field_values = field_parsers[field].parse_values(field_values)
 
-        # Then parse each value.
-        for field in output_fields:
-            field_values = split_fields[field]
-
-            if field_values is None:
-                field_values = u''
-            else:
-                # Ensure that  make it an iterable so we can
-                # treat it the same as multiple value fields.
-                if (isinstance(field_values, basestring) or
-                        not isinstance(field_values, Iterable)):
-                    field_values = [field_values]
-
-                # Apply any parsing for individual values.
-                if field in FIELD_PARSERS:
-                    field_values = [FIELD_PARSERS[field](value)
-                                    for value in field_values]
-                else:
-                    field_values = [unicode(value) for value in field_values]
-
-                # Convert the list of values into a single string.
-                field_values = args.subdelimiter.join(field_values)
-
-            # Convert any Unicode to UTF-8.
-            issue_values.append(unicode(field_values).encode('utf-8'))
+            # Convert from Unicode to UTF-8.
+            issue_values += [value.encode('utf-8') for value in field_values]
 
         # We add the newline before each new row so we don't end with a
         # final blank line when sending output to a file.
