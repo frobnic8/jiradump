@@ -8,9 +8,9 @@ if jira.resources.Resource.__str__ == object.__str__:
     # A prioritized list of the keys in self.raw most likely to contain a human
     # readable name or identifier, or that offer other key information.
     jira.resources.Resource._READABLE_IDS = ('displayName', 'key', 'name',
-                                             'filename', 'value', 'scope', 'votes',
-                                             'id', 'mimeType', 'closed')
-
+                                             'filename', 'value', 'scope',
+                                             'votes', 'id', 'mimeType',
+                                             'closed')
 
     def __resource_str(self):
         """Provide a short, pretty name for this jira resource."""
@@ -27,7 +27,6 @@ if jira.resources.Resource.__str__ == object.__str__:
         return repr(self)
 
     jira.resources.Resource.__str__ = __resource_str
-
 
     def __resource_repr(self):
         """Provide a more detailed name for this jira resource."""
