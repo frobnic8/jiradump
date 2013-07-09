@@ -80,6 +80,9 @@ class TimeInStatusFieldParser(BasicFieldParser):
     PARSING_DELIMITER = '_*|*_'
     PARSING_SUBDELIMITER = '_*:*_'
 
+    FIRST_STATUSES = ['Open']
+    LAST_STATUSES = ['Closed']
+
     def __init__(self, field_name, issues, jira, delimiter):
         """Scan the issues to see which status codes exist in these issues.
 
@@ -87,15 +90,82 @@ class TimeInStatusFieldParser(BasicFieldParser):
         status codes.
         """
         # Create a mapping of status IDs to names (including custom statuses).
+        debug('Mapping status IDs to names.')
         # TODO: Add error handling
-        self.status_names = dict([(status.id, status.name)
+        self.status_names = dict([(status.id, unicode(status.name))
                                   for status in jira.statuses()])
 
-        # scan the issues for the know statuses
-        return BasicFieldParser.setup(self, issues, jira, delimiter)
+        # Lookup the ID for Time in Status.
+        debug("Looking up 'Time in Status' field ID.")
+        # TODO: Add error handling
+        for field in jira.fields():
+            if field['name'] == 'Time in Status':
+                time_in_status_id = field['id']
+                break
+
+        statuses = set()
+        # Scan the issues for the know statuses
+        for issue in issues:
+            time_in_status = getattr(issue.fields, time_in_status_id, u'')
+            statuses.update(self._parse_time_in_status(time_in_status).keys())
+
+        # Assign an order to the statuses found making sure a few certain
+        # statuses are in certain positions.
+        prefix = []
+        postfix = []
+        body = []
+        # Pull out any statuses we want to be first in order.
+        for status in self.FIRST_STATUSES:
+            if status in statuses:
+                statuses.remove(status)
+                prefix.append(status)
+        for status in self.LAST_STATUSES:
+            if status in statuses:
+                statuses.remove(status)
+                postfix.append(status)
+        # Build the ordered list of statuses.
+        self.statuses = prefix + sorted(list(statuses)) + postfix
+
+        return BasicFieldParser.__init__(self, field_name, issues, jira, delimiter)
 
     def headers(self):
-        return []
+        headers = []
+        for status in self.statuses:
+            headers += [status + u' Count', status + u' Days']
+        return headers
+
+    def _parse_time_in_status(self, raw_time_in_status):
+        """Split the time in status raw into a readable dict.
+
+        Example data:
+        u'1_*:*_1_*:*_584742000_*|*_6_*:*_1_*:*_0_*|*_' + \
+        u'10111_*:*_1_*:*_170163000_*|*_10112_*:*_1_*:*_352367000'
+
+        How to split:
+          [eggs.split('_*:*_') for eggs in spam.split('_*|*_')]
+
+        The first part is the status code, the second is the number of times in
+        that status, the third is the time in milliseconds.
+
+        The dict is keyed to the human readable status name, with a value
+        for count which is the integer times in that status
+        The duration is converted to a timedelta.
+        """
+        # Split the giant string into invidicual status times and convert the
+        # status codes and times into human readable formats.
+        if not raw_time_in_status:
+            return {}
+        debug('Parsing Raw Time in Status: ' + repr(raw_time_in_status))
+        status_times = {}
+        for status_time in raw_time_in_status.split(self.PARSING_DELIMITER):
+            status, count, msecs = status_time.split(self.PARSING_SUBDELIMITER)
+            # TODO: Add error handling
+            status_times[self.status_names[status]] = {
+                'count': int(count),
+                'duration': timedelta(milliseconds=int(msecs))
+            }
+
+        return status_times
 
     def _parse_one_value(self, raw_value):
         """This should never be called on parsers that split values into
@@ -105,7 +175,7 @@ class TimeInStatusFieldParser(BasicFieldParser):
 
     # TODO: Support that crazy ass 'Time in Status'
     # TODO: Replace this with a proper, multi-column parsing object.
-    def parse_time_in_status(raw_values):
+    def parse_values(self, raw_values):
         """Split the time in status raw into a readable string.
 
         Example data:
@@ -128,34 +198,22 @@ class TimeInStatusFieldParser(BasicFieldParser):
 
         """
 
-        """
-        if not raw_value:
-            return [u'']
+        if not raw_values:
+            return [u''] * (len(self.statuses) * 2)
 
-        # TODO: This nastiness is to support a temporary Time in Status parsing
-        # until we get a real parser setup.
-        global status_names
+        status_times = self._parse_time_in_status(raw_values)
+        parsed_values = []
+        for status in self.statuses:
+            # If there is entry for this status, add on two blank columns.
+            # One for the count and one for the duration.
+            if status not in status_times:
+                parsed_values += [u'', u'']
+                continue
 
-        # These are the crazy Time in Status delimiters we need to parse with.
-        PARSING_DELIMITER = '_*|*_'
-        PARSING_SUBDELIMITER = '_*:*_'
-
-        # TODO: This is bad because we IGNORE the user set subdelimiter.
-        SUBDELIMITER = ', '
-        # TODO: This is also bad and could conflict with user set delimiters.
-        SUBSUBDELIMITER = ':'
-
-        parsed = []
-        debug('Splitting Raw Time in Status: ' + repr(raw_value))
-        for item in raw_value.split(PARSING_DELIMITER):
-            debug('Splitting Time in Status item: ' + repr(item))
-            split = item.split(PARSING_SUBDELIMITER)
-            debug('Split Time in Status item: ' + repr(split))
-            split[0] = status_names.get(split[0], 'Unknown ' + split[0])
-            # TODO: Add error handling here.
-            split[2] = timedelta(milliseconds=int(split[2])).total_seconds()
-            split[2] = '%0.2f days' % (split[2] / (60 * 60 * 24))
-            debug('Parsed Time in Status item: ' + repr(split))
-            parsed.append(SUBSUBDELIMITER.join(split))
-        return SUBDELIMITER.join(parsed)
-        """
+            # TODO: Add error handling.
+            count = unicode(status_times[status]['count'])
+            # Format the duration in decimal days.
+            duration = status_times[status]['duration'].total_seconds()
+            duration = unicode('%0.2f' % (duration / (60 * 60 * 24)))
+            parsed_values += [count, duration]
+        return parsed_values

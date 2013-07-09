@@ -58,7 +58,7 @@ FIELD_PARSERS = {
     'Date Reported': DateTimeFieldParser,
     'Due Date': DateTimeFieldParser,
     'End Date': DateTimeFieldParser,
-    #'Time in Status': TimeInStatusFieldParser,
+    'Time in Status': TimeInStatusFieldParser,
 }
 
 
