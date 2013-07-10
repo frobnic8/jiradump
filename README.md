@@ -1,7 +1,7 @@
 jiradump
 ========
 
-dump JIRA issues from a filter as delimited plain text
+Dump JIRA issues from a filter, including custom fields, as delimited text
 
 Installation
 ------------

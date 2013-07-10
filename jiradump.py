@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""jiradump.py - dump JIRA issues from a filter as delimited plain text"""
+"""jiradump.py - dump JIRA issues from a filter as delimited text"""
 
 __author__ = 'erskin.cherry@opower.com'
 __version__ = '1.0.0'
