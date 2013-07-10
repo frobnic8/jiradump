@@ -10,20 +10,13 @@ This uses jira-python to make talking to the JIRA REST API easier. The bad news
 is, jira-python has a few dependencies, and I had to add a minor tweak or two
 as well, so it can be more of a pain to install than it should be.
 
-This /should/ get you what you need:
+This should get you the support stuff you need:
 
     pip install jira-python
 
-Except for my (currently pending as a pull request) fork:
-
-https://bitbucket.org/frobnic8/jira-python/overview
-
-I've just been throwing my fork into jiradump folder and letting the local jira
-package override the system default for now while I hack around.
-
-Seriously, if you need this right now, just come ping me and I'll hook you up.
+If this doesn't just magically work for you, just ping me and I'll hook you up.
 Once Opower gets a nice local PyPI server and I get my act together and package
-this properly, it'll get a lot easier.
+this properly, it'll get easier.
 
 
 Usage
