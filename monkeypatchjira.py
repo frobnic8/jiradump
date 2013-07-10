@@ -1,10 +1,13 @@
 """Monkeypatch jira to have basic __str__ and __repr__ methods for Resource."""
 # This import can be removed if/when the following pull request for jira-python
 # is approved and merged:
-# https://bitbucket.org/bspeakmon/jira-python/pull-request/25/added-__str__-and-__repr__-support-to-the/diff
+# https://bitbucket.org/bspeakmon/jira-python/pull-request/25
 import jira.resources
+from logging import debug
 
 if jira.resources.Resource.__str__ == object.__str__:
+    debug("Monkeypatching the jira-python module's jira.resources.Resource "
+          " with a better str() and repr().")
     # A prioritized list of the keys in self.raw most likely to contain a human
     # readable name or identifier, or that offer other key information.
     jira.resources.Resource._READABLE_IDS = ('displayName', 'key', 'name',

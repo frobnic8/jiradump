@@ -30,7 +30,8 @@ class BasicFieldParser(object):
         in one delimited string.
 
         Fields which split into multiple columns should overwrite this method
-        to raise a NotImplemented exception.
+        to raise a NotImplementedError exception and instead do their work by
+        overwriting parse_values() and headers().
         """
         if raw_value:
             return unicode(raw_value)
@@ -56,6 +57,11 @@ class BasicFieldParser(object):
 
 
 class DateTimeFieldParser(BasicFieldParser):
+    """Converts JIRA's ISO style date times in more spreadsheet friendly form.
+
+    e.g. 2013-06-04T15:15:36.000-0400 to 2013-06-04 15:15:36
+    """
+
     def _parse_one_value(self, raw_value):
         """Parse the ISO style datetime values into a spreadsheet friendly
         format.
@@ -75,6 +81,7 @@ class DateTimeFieldParser(BasicFieldParser):
 
 
 class TimeInStatusFieldParser(BasicFieldParser):
+    """Parse the crazy custom Time in Status field into multple columns."""
 
     # These are the crazy Time in Status delimiters we need to parse with.
     PARSING_DELIMITER = '_*|*_'
@@ -113,7 +120,6 @@ class TimeInStatusFieldParser(BasicFieldParser):
         # statuses are in certain positions.
         prefix = []
         postfix = []
-        body = []
         # Pull out any statuses we want to be first in order.
         for status in self.FIRST_STATUSES:
             if status in statuses:
@@ -126,7 +132,8 @@ class TimeInStatusFieldParser(BasicFieldParser):
         # Build the ordered list of statuses.
         self.statuses = prefix + sorted(list(statuses)) + postfix
 
-        return BasicFieldParser.__init__(self, field_name, issues, jira, delimiter)
+        # Call the super init to be safe.
+        BasicFieldParser.__init__(self, field_name, issues, jira, delimiter)
 
     def headers(self):
         headers = []
@@ -171,10 +178,8 @@ class TimeInStatusFieldParser(BasicFieldParser):
         """This should never be called on parsers that split values into
         multiple columns.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
-    # TODO: Support that crazy ass 'Time in Status'
-    # TODO: Replace this with a proper, multi-column parsing object.
     def parse_values(self, raw_values):
         """Split the time in status raw into a readable string.
 

@@ -7,9 +7,9 @@ __version__ = '1.0.0'
 
 from getpass import getpass, getuser
 from jira.client import JIRA
-from logging import debug, info, warning, error, getLogger
+from logging import debug, info, error, getLogger
 from parsers import BasicFieldParser, DateTimeFieldParser, \
-                    TimeInStatusFieldParser
+    TimeInStatusFieldParser
 import argparse
 import jira.resources
 import logging
