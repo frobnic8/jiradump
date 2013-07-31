@@ -231,6 +231,9 @@ if __name__ == '__main__':
     else:
         input_fields = DEFAULT_OUTPUT_FIELDS
     debug('Input fields from filter: ' + ', '.join(input_fields))
+    unknown_fields = set(input_fields) - set(field_ids.keys())
+    if unknown_fields:
+        raise ValueError('Unknown field(s): ' + ', '.join(unknown_fields))
 
     field_parsers = {}
 
