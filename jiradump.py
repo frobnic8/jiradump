@@ -14,11 +14,15 @@ import argparse
 import jira.resources
 import logging
 import sys
+import os
 
 # This import can be removed if/when the following pull request for jira-python
 # is approved and merged:
 # https://bitbucket.org/bspeakmon/jira-python/pull-request/25
 import monkeypatchjira
+
+# Environment variables, in order of precendence, to check for a username.
+USER_ENVS = ['JIRADUMP_USER', 'OPOWER_USER', 'POSE_USER']
 
 # JIRA API configuration parameters.
 API_SERVER = 'https://ticket.opower.com'
@@ -126,6 +130,14 @@ def list_items(items, delimiter, output, flip=False):
     sys.exit()
 
 
+def get_jiradump_user():
+    """Guess the username from known environment variables or the system."""
+    for env in USER_ENVS:
+        if env in os.environ and os.environ[env]:
+            return os.environ[env]
+    return getuser()
+
+
 if __name__ == '__main__':
     # Parse the command line arguments.
     args = build_parser().parse_args()
@@ -138,7 +150,7 @@ if __name__ == '__main__':
     debug('Building credentials.')
     # Guess the username if possible.
     if not args.username:
-        args.username = getuser()
+        args.username = get_jiradump_user()
 
     # Get the password, reading from a file if requested.
     if args.passfile and args.passfile != '-':
