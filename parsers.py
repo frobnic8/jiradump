@@ -166,7 +166,9 @@ class TimeInStatusFieldParser(BasicFieldParser):
         status_times = {}
         for status_time in raw_time_in_status.split(self.PARSING_DELIMITER):
             status, count, msecs = status_time.split(self.PARSING_SUBDELIMITER)
-            # TODO: Add error handling
+            if status not in self.status_names:
+                self.status_names[status] = 'Unknown Status ' + status
+            # TODO: Add error handling for type conversion.
             status_times[self.status_names[status]] = {
                 'count': int(count),
                 'duration': timedelta(milliseconds=int(msecs))
