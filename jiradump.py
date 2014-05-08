@@ -74,9 +74,9 @@ def build_parser():
 
     # TODO: Display default fields in help.
 
-    parser.add_argument('-u', '--username', nargs='1', help='specify JIRA '
+    parser.add_argument('-u', '--username', nargs=1, help='specify JIRA '
                         'user account. Defaults to the local username')
-    parser.add_argument('-p', '--passfile', nargs='1', help='specify '
+    parser.add_argument('-p', '--passfile', nargs=1, help='specify '
                         '*filename* which contains user\'s password. '
                         'Defaults to prompting for password')
     parser.add_argument('-v', '--verbose', action='count', help='increase '
