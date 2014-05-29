@@ -3,7 +3,7 @@
 """jiradump.py - dump JIRA issues from a filter as delimited text"""
 
 __author__ = 'erskin.cherry@opower.com'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 from getpass import getpass, getuser
 from jira.client import JIRA
@@ -149,16 +149,18 @@ if __name__ == '__main__':
 
     debug('Building credentials.')
     # Guess the username if possible.
-    if not args.username:
+    if args.username:
+        args.username = args.username[0]
+    else:
         args.username = get_jiradump_user()
 
     # Get the password, reading from a file if requested.
-    if args.passfile and args.passfile != '-':
+    if args.passfile and args.passfile[0] != '-':
         try:
-            PASSWORD = open(args.passfile).read().strip()
+            PASSWORD = open(args.passfile[0]).read().strip()
         except IOError as err:
             error(err)
-            error('Failed to read password from file: ' + args.passfile)
+            error('Failed to read password from file: ' + args.passfile[0])
             sys.exit(err.get_attr('errno', 1))
     else:
         PASSWORD = getpass()
