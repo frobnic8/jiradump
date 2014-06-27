@@ -109,9 +109,3 @@ work with list filters and list fields as well as the standard issue dump.
                             findable by name, and exit
       --list-statuses       list all status IDs and names known and exit
       --version             show program's version number and exit
-
-Known Bugs
-----------
-Rendering the 'Time in Status' field is current a dirty, dirty hack that ignores
-any settings for subdelimiter and has a fixed sub-subdelimiter of ':'. I need to
-replace it with a proper parsing object infrastructure at some point.
