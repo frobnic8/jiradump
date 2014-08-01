@@ -6,17 +6,36 @@ Dump JIRA issues from a filter, including custom fields, as delimited text
 Installation
 ------------
 
-This uses jira-python to make talking to the JIRA REST API easier. The bad news
-is, jira-python has a few dependencies, and I had to add a minor tweak or two
-as well, so it can be more of a pain to install than it should be.
+To install locally, run:
 
-This should get you the support stuff you need:
+    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
 
-    pip install jira-python
+(Note: you may need prefix commands with sudo and will then be asked for
+your laptop password.)
 
-If this doesn't just magically work for you, just ping me and I'll hook you up.
-Once Opower gets a nice local PyPI server and I get my act together and package
-this properly, it'll get easier.
+If that fails, you probably need to install pip first:
+
+    easy_install pip
+    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+
+
+If *that* fails, you probably need to install setuptools first:
+
+    curl https://bootstrap.pypa.io/ez_setup.py > ez_setup.py
+    python ./ez_setup.py
+    easy_install pip
+    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+    rm ez_setup.py
+    rm setuptools-*.zip
+
+(Note: the first command and last two commands should never need sudo.)
+If the curl command fails, you can try:
+
+    wget https://bootstrap.pypa.io/ez_setup.py
+
+Or just open the URL in a web browser and save the file yourself.
+
+If none of this just magically works for you, just ping me and I'll hook you up.
 
 
 Usage

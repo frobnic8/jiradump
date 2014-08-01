@@ -3,7 +3,7 @@
 """jiradump.py - dump JIRA issues from a filter as delimited text"""
 
 __author__ = 'erskin.cherry@opower.com'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 from getpass import getpass, getuser
 from jira.client import JIRA
@@ -15,11 +15,6 @@ import jira.resources
 import logging
 import sys
 import os
-
-# This import can be removed if/when the following pull request for jira-python
-# is approved and merged:
-# https://bitbucket.org/bspeakmon/jira-python/pull-request/25
-import monkeypatchjira
 
 # Environment variables, in order of precendence, to check for a username.
 USER_ENVS = ['JIRADUMP_USER', 'OPOWER_USER', 'POSE_USER']
@@ -138,7 +133,7 @@ def get_jiradump_user():
     return getuser()
 
 
-if __name__ == '__main__':
+def main():
     # Parse the command line arguments.
     args = build_parser().parse_args()
 

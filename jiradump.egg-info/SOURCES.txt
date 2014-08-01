@@ -1,0 +1,9 @@
+setup.py
+bin/jiradump
+jiradump/__init__.py
+jiradump/parsers.py
+jiradump.egg-info/PKG-INFO
+jiradump.egg-info/SOURCES.txt
+jiradump.egg-info/dependency_links.txt
+jiradump.egg-info/requires.txt
+jiradump.egg-info/top_level.txt
