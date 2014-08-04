@@ -7,7 +7,8 @@ from setuptools import setup
 
 setup(name='jiradump',
       version='1.0.2',
-      description='Dump JIRA issues from a filter, including custom fields, as delimited text',
+      description='Dump JIRA issues from a filter, including custom fields, ' +
+                  'as delimited text',
       author='Erskin Cherry',
       author_email='erskin.cherry@opower.com',
       url='https://github.va.opower.it/erskin-cherry/jiradump',
@@ -16,9 +17,9 @@ setup(name='jiradump',
       scripts=['bin/jiradump'],
       long_description=open('README.md').read(),
       install_requires=[
-        "jira-python >= 0.16",
+          'jira-python >= 0.16',
       ],
       provides=[
-        'jiradump',
+          'jiradump',
       ],
-     )
+      )

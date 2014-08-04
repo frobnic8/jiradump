@@ -14,6 +14,7 @@ class BasicFieldParser(object):
         """Handle any initial setup for the given issue set."""
         self.field_name = unicode(field_name)
         self.delimiter = unicode(delimiter)
+        # issues and jira are made available, but not used in the basic parser.
 
     def headers(self):
         """Return an ordered list of headers for the given field as unicode.

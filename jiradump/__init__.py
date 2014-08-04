@@ -8,7 +8,7 @@ __version__ = '1.0.2'
 from getpass import getpass, getuser
 from jira.client import JIRA
 from logging import debug, info, error, getLogger
-from parsers import BasicFieldParser, DateTimeFieldParser, \
+from jiradump.parsers import BasicFieldParser, DateTimeFieldParser, \
     TimeInStatusFieldParser
 import argparse
 import jira.resources
@@ -134,6 +134,7 @@ def get_jiradump_user():
 
 
 def main():
+    """Parse arguments and retrieve filters, fields, status, or dump issues."""
     # Parse the command line arguments.
     args = build_parser().parse_args()
 
@@ -152,13 +153,13 @@ def main():
     # Get the password, reading from a file if requested.
     if args.passfile and args.passfile[0] != '-':
         try:
-            PASSWORD = open(args.passfile[0]).read().strip()
+            password = open(args.passfile[0]).read().strip()
         except IOError as err:
             error(err)
             error('Failed to read password from file: ' + args.passfile[0])
             sys.exit(err.get_attr('errno', 1))
     else:
-        PASSWORD = getpass()
+        password = getpass()
 
     # Parse any encoded characters in the delmiter.
     args.delimiter = args.delimiter.decode('string-escape')
@@ -167,7 +168,7 @@ def main():
 
     # Configure our JIRA interface.
     options = {'server': API_SERVER}
-    jira = JIRA(options=options, basic_auth=(args.username, PASSWORD))
+    jira = JIRA(options=options, basic_auth=(args.username, password))
     info('Connecting as %s to %s' % (args.username, API_SERVER))
 
     # Create a mapping of field names (including custom ones) to field IDs.
