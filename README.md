@@ -6,37 +6,21 @@ Dump JIRA issues from a filter, including custom fields, as delimited text
 Installation
 ------------
 
-To install locally, run:
+The sfs tool is now available in a nice egg package.
 
-    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+If you've never installed python stuff before, this will probably be the
+terminal commands you want to run: (This will prompt you for your login
+password)
 
-(Note: you may need prefix commands with sudo and will then be asked for
-your laptop password.)
+    sudo easy_install pip
+    sudo pip install --upgrade setuptools
+    sudo pip install git+https://github.va.opower.it/erskin-cherry/jiradump
 
-If that fails, you probably need to install pip first:
+To test your installation, run:
 
-    easy_install pip
-    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+    jiradump --help
 
-
-If *that* fails, you probably need to install setuptools first:
-
-    curl https://bootstrap.pypa.io/ez_setup.py > ez_setup.py
-    python ./ez_setup.py
-    easy_install pip
-    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
-    rm ez_setup.py
-    rm setuptools-*.zip
-
-(Note: the first command and last two commands should never need sudo.)
-If the curl command fails, you can try:
-
-    wget https://bootstrap.pypa.io/ez_setup.py
-
-Or just open the URL in a web browser and save the file yourself.
-
-If none of this just magically works for you, just ping me and I'll hook you up.
-
+If you are still having problems, just let Erskin know and he'll help you out.
 
 Usage
 -----
