@@ -57,6 +57,28 @@ class BasicFieldParser(object):
                                      for value in raw_values])]
 
 
+class SecondsDurationParser(BasicFieldParser):
+    """Converts durations stored as seconds into decimal days.
+
+    Fields such as "Days since last comment" are stored in raw seconds.
+    This parser converst this to decimal days to two places.
+
+    """
+
+    def _parse_one_value(self, raw_value):
+        """Converts seconds to decimal days to two places."""
+
+        debug('Parsing raw seconds duration: ' + repr(raw_value))
+        if raw_value:
+            try:
+                return unicode('%0.2f' % (float(raw_value) / (60 * 60 * 24)))
+            except ValueError:
+                warning('Could not parse seconds duration: ' + raw_value)
+                return BasicFieldParser._parse_one_value(self, raw_value)
+        else:
+            return u''
+
+
 class DateTimeFieldParser(BasicFieldParser):
     """Converts JIRA's ISO style date times in more spreadsheet friendly form.
 

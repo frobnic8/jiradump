@@ -3,13 +3,13 @@
 """jiradump.py - dump JIRA issues from a filter as delimited text"""
 
 __author__ = 'erskin.cherry@opower.com'
-__version__ = '1.0.2'
+__version__ = '1.1.0'
 
 from getpass import getpass, getuser
 from jira.client import JIRA
 from logging import debug, info, error, getLogger
 from jiradump.parsers import BasicFieldParser, DateTimeFieldParser, \
-    TimeInStatusFieldParser
+    SecondsDurationParser, TimeInStatusFieldParser
 import argparse
 import jira.resources
 import logging
@@ -58,6 +58,7 @@ FIELD_PARSERS = {
     'Due Date': DateTimeFieldParser,
     'End Date': DateTimeFieldParser,
     'Time in Status': TimeInStatusFieldParser,
+    'Days since last comment': SecondsDurationParser,
 }
 
 
@@ -157,7 +158,7 @@ def main():
         except IOError as err:
             error(err)
             error('Failed to read password from file: ' + args.passfile[0])
-            sys.exit(err.get_attr('errno', 1))
+            sys.exit(getattr(err, 'errno', 1))
     else:
         password = getpass()
 

@@ -9,12 +9,16 @@ Installation
 The sfs tool is now available in a nice egg package.
 
 If you've never installed python stuff before, this will probably be the
-terminal commands you want to run: (This will prompt you for your login
-password)
+terminal commands you want to run: (Run them one at a time. The first one
+will prompt you for your local computer login password.)
 
     sudo easy_install pip
     sudo pip install --upgrade setuptools
     sudo pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+
+Note: You will need git installed. On a Mac, if you don't have it you will
+get a prompt to install it. Afterwards, you'll then need to run the last
+command again.
 
 To test your installation, run:
 
@@ -34,19 +38,43 @@ You get three features:
 * List the known set of issues status names and IDs
 * Dump issues for a filter
 
+
+Quick Example
+^^^^^^^^^^^^^
+
+List the filters you have favorited in JIRA:
+
+    jiradump --list-filters
+
+    11681   My Unresolved Assigned Tickets
+    13109   My Unresolved Reporting Requests
+    13187   My Unresolved Past Iteration Tickets
+    17196   CS Fires and Maintenance
+    17447   Critical Client Issues
+
+Pick a filter (name or number will work, but use quotes if you use the name and
+it has spaces in it!) and dump it out:
+
+    jiradump "Critical Client Issues" > ~/Documents/cci_ticket_dump.txt
+
+Then just open the file in a spreadsheet program.
+
+Detailed Usage
+^^^^^^^^^^^^^^
+
 Because you are likely running this on your local laptop, you'll probably want
 the -u option to specify your username.
 
 List Fields:
 
-    jiradump.py --list-fields
+    jiradump --list-fields
 
 This is useful if you want to make a file to tell jiradump what specific fields
 you want to include in the extract.
 
 List Filters:
 
-    jiradump.py --list-filters
+    jiradump --list-filters
 
 You can dump any JIRA filter if you know the ID, but you can only look up the
 ID for filters in your favorites. This lists your favorite filters and their
@@ -54,7 +82,7 @@ IDs for reference.
 
 List Statuses:
 
-    jiradump.py --list-statuses
+    jiradump --list-statuses
 
 This just lists the statues available in JIRA. It's admittedly less useful
 outside of debugging stuff.
@@ -69,7 +97,7 @@ default number of issues to standard output.
 Here's the full usage. Note that options like delimiter and output file name
 work with list filters and list fields as well as the standard issue dump.
 
-    usage: jiradump.py [-h] [-u [USERNAME]] [-p [PASSFILE]] [-v] [-d [DELIMITER]]
+    usage: jiradump [-h] [-u [USERNAME]] [-p [PASSFILE]] [-v] [-d [DELIMITER]]
                        [-D [SUBDELIMITER]] [-o [OUTPUT]] [-m [MAX_RESULTS]]
                        [-f [FIELDS_FILE]] [--list-fields] [--list-filters]
                        [--list-statuses] [--version]

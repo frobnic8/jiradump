@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: jiradump
-Version: 1.0.2
+Version: 1.1.0
 Summary: Dump JIRA issues from a filter, including custom fields, as delimited text
 Home-page: https://github.va.opower.it/erskin-cherry/jiradump
 Author: Erskin Cherry
