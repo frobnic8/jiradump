@@ -3,7 +3,7 @@
 """jiradump.py - dump JIRA issues from a filter as delimited text"""
 
 __author__ = 'erskin.cherry@opower.com'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 from getpass import getpass, getuser
 from jira.client import JIRA

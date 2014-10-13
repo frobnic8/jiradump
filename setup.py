@@ -6,7 +6,7 @@ use_setuptools()
 from setuptools import setup
 
 setup(name='jiradump',
-      version='1.1.0',
+      version='1.1.1',
       description='Dump JIRA issues from a filter, including custom fields, ' +
                   'as delimited text',
       author='Erskin Cherry',
@@ -14,7 +14,7 @@ setup(name='jiradump',
       url='https://github.va.opower.it/erskin-cherry/jiradump',
       download_url='https://github.va.opower.it/erskin-cherry/jiradump/tree/master/dist',
       packages=['jiradump'],
-      scripts=['bin/jiradump'],
+      entry_points={'console_scripts': ['jiradump = jiradump:main']},
       long_description=open('README.md').read(),
       install_requires=[
           'jira-python >= 0.16',

@@ -8,7 +8,7 @@ Installation
 
 The sfs tool is now available in a nice egg package.
 
-If you've never installed python stuff before, this will probably be the
+If you've never installed python stuff before, these will probably be the
 terminal commands you want to run: (Run them one at a time. The first one
 will prompt you for your local computer login password.)
 
