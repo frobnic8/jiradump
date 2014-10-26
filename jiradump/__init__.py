@@ -176,6 +176,9 @@ def main():
         args.jira = args.jira[0]
     else:
         args.jira = get_jira_server()
+    # Assume HTTPS if no URI method is given
+    if '://' not in args.jira:
+        args.jira = 'https://' + args.jira
 
     # Parse any encoded characters in the delmiter.
     args.delimiter = args.delimiter.decode('string-escape')

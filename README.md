@@ -31,7 +31,11 @@ To test your installation, run:
 
     jiradump --help
 
-If you are still having problems, just let Erskin know and he'll help you out.
+You probably only use one JIRA server, and probably don't want to type it
+in every time. You can set the JIRA_SERVER environment variable and jiradump
+will default to that. Something like this in your .profile should work:
+
+    export JIRA_SERVER=https://jira.example.com
 
 Usage
 -----
@@ -47,7 +51,7 @@ You get three features:
 
 
 Quick Example
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 List the filters you have favorited in JIRA:
 
@@ -67,7 +71,7 @@ it has spaces in it!) and dump it out:
 Then just open the file in a spreadsheet program.
 
 Detailed Usage
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 Because you are likely running this on your local laptop, you'll probably want
 the -u option to specify your username.
