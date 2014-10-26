@@ -13,7 +13,7 @@ stuff before, these will probably be the terminal commands you want to run:
 
     easy_install pip
     pip install --upgrade setuptools
-    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+    pip install git+https://github.com/frobnic8/jiradump
 
 If it dies on just the last command, you probably need to install git.
 On a Mac, if you don't have it you will get a prompt to install it.
@@ -25,7 +25,7 @@ you for your login password)
 
     sudo easy_install pip
     sudo pip install --upgrade setuptools
-    sudo pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+    sudo pip install git+https://github.com/frobnic8/jiradump
 
 To test your installation, run:
 
