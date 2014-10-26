@@ -1,5 +1,4 @@
 setup.py
-bin/jiradump
 jiradump/__init__.py
 jiradump/parsers.py
 jiradump.egg-info/PKG-INFO

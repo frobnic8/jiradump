@@ -6,19 +6,26 @@ Dump JIRA issues from a filter, including custom fields, as delimited text
 Installation
 ------------
 
-The sfs tool is now available in a nice egg package.
+The sfs tool is now available in a nice wheel package.
 
-If you've never installed python stuff before, these will probably be the
-terminal commands you want to run: (Run them one at a time. The first one
-will prompt you for your local computer login password.)
+If that doesn't mean anything to you and you've never installed python
+stuff before, these will probably be the terminal commands you want to run:
+
+    easy_install pip
+    pip install --upgrade setuptools
+    pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+
+If it dies on just the last command, you probably need to install git.
+On a Mac, if you don't have it you will get a prompt to install it.
+Afterwards, you'll then need to run the last command again.
+
+If the first command fails, and this is your personal computer, you can
+try it again with a little more powerful permissions: (This will prompt
+you for your login password)
 
     sudo easy_install pip
     sudo pip install --upgrade setuptools
     sudo pip install git+https://github.va.opower.it/erskin-cherry/jiradump
-
-Note: You will need git installed. On a Mac, if you don't have it you will
-get a prompt to install it. Afterwards, you'll then need to run the last
-command again.
 
 To test your installation, run:
 
@@ -97,11 +104,11 @@ default number of issues to standard output.
 Here's the full usage. Note that options like delimiter and output file name
 work with list filters and list fields as well as the standard issue dump.
 
-    usage: jiradump [-h] [-u [USERNAME]] [-p [PASSFILE]] [-v] [-d [DELIMITER]]
-                       [-D [SUBDELIMITER]] [-o [OUTPUT]] [-m [MAX_RESULTS]]
-                       [-f [FIELDS_FILE]] [--list-fields] [--list-filters]
-                       [--list-statuses] [--version]
-                       [FILTER]
+    usage: jiradump [-h] [-u USERNAME] [-p PASSFILE] [-j JIRA] [-v]
+                    [-d [DELIMITER]] [-D [SUBDELIMITER]] [-o [OUTPUT]]
+                    [-m [MAX_RESULTS]] [-f [FIELDS_FILE]] [--list-fields]
+                    [--list-filters] [--list-statuses] [--version]
+                    [FILTER]
 
     dump JIRA issues from a filter as delimited plain text
 
@@ -111,12 +118,14 @@ work with list filters and list fields as well as the standard issue dump.
 
     optional arguments:
       -h, --help            show this help message and exit
-      -u [USERNAME], --username [USERNAME]
+      -u USERNAME, --username USERNAME
                             specify JIRA user account. Defaults to the local
                             username
-      -p [PASSFILE], --passfile [PASSFILE]
+      -p PASSFILE, --passfile PASSFILE
                             specify *filename* which contains user's password.
                             Defaults to prompting for password
+      -j JIRA, --jira JIRA  specify JIRA server. Defaults to
+                            https://jira.atlassian.com
       -v, --verbose         increase level of feedback output. Use -vv for even
                             more detail
       -d [DELIMITER], --delimiter [DELIMITER]

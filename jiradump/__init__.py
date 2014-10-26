@@ -2,8 +2,8 @@
 
 """jiradump.py - dump JIRA issues from a filter as delimited text"""
 
-__author__ = 'erskin.cherry@opower.com'
-__version__ = '1.1.1'
+__author__ = 'erskin@eldritch.org'
+__version__ = '1.1.2'
 
 from getpass import getpass, getuser
 from jira.client import JIRA
@@ -17,10 +17,11 @@ import sys
 import os
 
 # Environment variables, in order of precendence, to check for a username.
-USER_ENVS = ['JIRADUMP_USER', 'OPOWER_USER', 'POSE_USER']
+USER_ENVS = ['JIRADUMP_USER']
 
 # JIRA API configuration parameters.
-API_SERVER = 'https://ticket.opower.com'
+API_SERVER_ENVS = ['JIRA_URL']
+DEFAULT_API_SERVER = 'https://jira.atlassian.com'
 
 DEFAULT_OUTPUT_FIELDS = (
     'Key',
@@ -65,8 +66,7 @@ FIELD_PARSERS = {
 def build_parser():
     """Build a command line argument parser for jiradump."""
     parser = argparse.ArgumentParser(description='dump JIRA issues from a '
-                                     'filter at %s as delimited plain text' %
-                                     API_SERVER)
+                                     'filter as delimited plain text')
 
     # TODO: Display default fields in help.
 
@@ -75,6 +75,8 @@ def build_parser():
     parser.add_argument('-p', '--passfile', nargs=1, help='specify '
                         '*filename* which contains user\'s password. '
                         'Defaults to prompting for password')
+    parser.add_argument('-j', '--jira', nargs=1, help='specify JIRA '
+                        'server. Defaults to ' + DEFAULT_API_SERVER)
     parser.add_argument('-v', '--verbose', action='count', help='increase '
                         'level of feedback output. Use -vv for even more '
                         'detail')
@@ -126,6 +128,13 @@ def list_items(items, delimiter, output, flip=False):
     sys.exit()
 
 
+def get_jira_server():
+    for env in API_SERVER_ENVS:
+        if env in os.environ and os.environ[env]:
+            return os.environ[env]
+    return DEFAULT_API_SERVER
+
+
 def get_jiradump_user():
     """Guess the username from known environment variables or the system."""
     for env in USER_ENVS:
@@ -162,15 +171,21 @@ def main():
     else:
         password = getpass()
 
+    # Determine the JIRA server to connect to.
+    if args.jira:
+        args.jira = args.jira[0]
+    else:
+        args.jira = get_jira_server()
+
     # Parse any encoded characters in the delmiter.
     args.delimiter = args.delimiter.decode('string-escape')
 
     # Setup JIRA and file connections.
 
     # Configure our JIRA interface.
-    options = {'server': API_SERVER}
+    options = {'server': args.jira}
     jira = JIRA(options=options, basic_auth=(args.username, password))
-    info('Connecting as %s to %s' % (args.username, API_SERVER))
+    info('Connecting as %s to %s' % (args.username, args.jira))
 
     # Create a mapping of field names (including custom ones) to field IDs.
     debug('Mapping field names to IDs.')

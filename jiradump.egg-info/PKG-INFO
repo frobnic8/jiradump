@@ -1,12 +1,12 @@
 Metadata-Version: 1.1
 Name: jiradump
-Version: 1.1.1
+Version: 1.1.2
 Summary: Dump JIRA issues from a filter, including custom fields, as delimited text
-Home-page: https://github.va.opower.it/erskin-cherry/jiradump
+Home-page: https://github.com/frobnic8/jiradump
 Author: Erskin Cherry
-Author-email: erskin.cherry@opower.com
+Author-email: erskin@eldritch.org
 License: UNKNOWN
-Download-URL: https://github.va.opower.it/erskin-cherry/jiradump/tree/master/dist
+Download-URL: https://github.com/frobnic8/jiradump/tree/master/dist
 Description: jiradump
         ========
         
