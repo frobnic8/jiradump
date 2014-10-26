@@ -76,7 +76,7 @@ def build_parser():
                         '*filename* which contains user\'s password. '
                         'Defaults to prompting for password')
     parser.add_argument('-j', '--jira', nargs=1, help='specify JIRA '
-                        'server. Defaults to ' + DEFAULT_API_SERVER)
+                        'server. Defaults to ' + get_jira_server())
     parser.add_argument('-v', '--verbose', action='count', help='increase '
                         'level of feedback output. Use -vv for even more '
                         'detail')

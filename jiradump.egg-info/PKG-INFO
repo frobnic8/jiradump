@@ -22,7 +22,7 @@ Description: jiradump
         
             easy_install pip
             pip install --upgrade setuptools
-            pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+            pip install git+https://github.com/frobnic8/jiradump
         
         If it dies on just the last command, you probably need to install git.
         On a Mac, if you don't have it you will get a prompt to install it.
@@ -34,7 +34,7 @@ Description: jiradump
         
             sudo easy_install pip
             sudo pip install --upgrade setuptools
-            sudo pip install git+https://github.va.opower.it/erskin-cherry/jiradump
+            sudo pip install git+https://github.com/frobnic8/jiradump
         
         To test your installation, run:
         
@@ -60,7 +60,7 @@ Description: jiradump
         
         
         Quick Example
-        ^^^^^^^^^^^^^
+        ~~~~~~~~~~~~~
         
         List the filters you have favorited in JIRA:
         
@@ -80,7 +80,7 @@ Description: jiradump
         Then just open the file in a spreadsheet program.
         
         Detailed Usage
-        ^^^^^^^^^^^^^^
+        ~~~~~~~~~~~~~~
         
         Because you are likely running this on your local laptop, you'll probably want
         the -u option to specify your username.
