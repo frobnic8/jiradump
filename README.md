@@ -6,7 +6,7 @@ Dump JIRA issues from a filter, including custom fields, as delimited text
 Installation
 ------------
 
-The sfs tool is now available in a nice wheel package.
+The jiradump tool is now available in a nice wheel package.
 
 If that doesn't mean anything to you and you've never installed python
 stuff before, these will probably be the terminal commands you want to run:
