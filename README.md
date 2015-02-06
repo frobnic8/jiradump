@@ -13,6 +13,7 @@ stuff before, these will probably be the terminal commands you want to run:
 
     easy_install pip
     pip install --upgrade setuptools
+    pip install wheel
     pip install git+https://github.com/frobnic8/jiradump
 
 If it dies on just the last command, you probably need to install git.
