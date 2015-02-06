@@ -51,8 +51,7 @@ You get three features:
 * Dump issues for a filter
 
 
-Quick Example
-~~~~~~~~~~~~~
+### Quick Example
 
 List the filters you have favorited in JIRA:
 
@@ -71,8 +70,7 @@ it has spaces in it!) and dump it out:
 
 Then just open the file in a spreadsheet program.
 
-Detailed Usage
-~~~~~~~~~~~~~~
+### Detailed Usage
 
 Because you are likely running this on your local laptop, you'll probably want
 the -u option to specify your username.
