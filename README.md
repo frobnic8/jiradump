@@ -20,13 +20,16 @@ If it dies on just the last command, you probably need to install git.
 On a Mac, if you don't have it you will get a prompt to install it.
 Afterwards, you'll then need to run the last command again.
 
+If you are running Windows, you are probably going to have a bad time.
+Sorry about that.
+
 If the first command fails, and this is your personal computer, you can
 try it again with a little more powerful permissions: (This will prompt
 you for your login password)
 
-    sudo easy_install pip
-    sudo pip install --upgrade setuptools
-    sudo pip install git+https://github.com/frobnic8/jiradump
+    sudo -H easy_install pip
+    sudo -H pip install --upgrade setuptools
+    sudo -H pip install git+https://github.com/frobnic8/jiradump
 
 To test your installation, run:
 
@@ -34,7 +37,7 @@ To test your installation, run:
 
 You probably only use one JIRA server, and probably don't want to type it
 in every time. You can set the JIRA_SERVER environment variable and jiradump
-will default to that. Something like this in your .profile should work:
+will default to that. Something like this in your .bash_profile should work:
 
     export JIRA_SERVER=https://jira.example.com
 
