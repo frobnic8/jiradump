@@ -3,6 +3,7 @@
 from logging import debug, warning
 from collections import Iterable
 from datetime import datetime, timedelta
+import dateutil.parser
 
 
 class BasicFieldParser(object):
@@ -94,8 +95,7 @@ class DateTimeFieldParser(BasicFieldParser):
         debug('Parsing raw datetime value: ' + repr(raw_value))
         if raw_value:
             try:
-                return unicode(datetime.strptime(raw_value[:19],
-                                                 '%Y-%m-%dT%H:%M:%S'))
+                return unicode(dateutil.parser.parse(raw_value[:19]))
             except (TypeError, ValueError):
                 warning('Could not parse datetime: ' + raw_value)
                 return BasicFieldParser._parse_one_value(self, raw_value)
