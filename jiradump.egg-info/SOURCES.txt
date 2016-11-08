@@ -1,5 +1,7 @@
+README
 setup.py
 jiradump/__init__.py
+jiradump/__main__.py
 jiradump/parsers.py
 jiradump.egg-info/PKG-INFO
 jiradump.egg-info/SOURCES.txt
