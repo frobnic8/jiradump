@@ -6,7 +6,7 @@ use_setuptools()
 from setuptools import setup
 
 setup(name='jiradump',
-      version='1.1.2',
+      version='1.1.6',
       description='Dump JIRA issues from a filter, including custom fields, ' +
                   'as delimited text',
       author='Erskin Cherry',
